@@ -1,0 +1,52 @@
+apiVersion: "sparkoperator.k8s.io/v1beta2"
+kind: SparkApplication
+metadata:
+  name: sim-cloning-detector
+  namespace: spark-operator
+spec:
+  type: Java
+  # pythonVersion: "3"
+  mode: cluster
+  image: "spark:3.5.0"
+  imagePullPolicy: Always
+  mainApplicationFile: "local:///mnt/spark/work/spark-0.0.1-SNAPSHOT.jar"
+  mainClass: "binod.suman.spark.SparkBatchProcessor"
+  sparkVersion: "3.5.0"
+  deps:
+    packages:
+      - org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.0
+  restartPolicy:
+    type: OnFailure
+    onFailureRetries: 3
+    onFailureRetryInterval: 10
+    onSubmissionFailureRetries: 5
+    onSubmissionFailureRetryInterval: 20
+  restartPolicy:
+    type: Never
+  volumes:
+    - name: test-volume
+      persistentVolumeClaim:
+        claimName: nfs-pvc
+  driver:
+    cores: 1
+    coreLimit: "1200m"
+    memory: "512m"
+    javaOptions: "-Divy.cache.dir=/tmp -Divy.home=/tmp"
+    labels:
+      app: spark
+      version: 3.5.0
+    serviceAccount: spark-release-spark
+    volumeMounts:
+      - name: test-volume
+        mountPath: /mnt/spark/work
+  executor:
+    cores: 2
+    instances: 2
+    memory: "1024m"
+    labels:
+      app: spark
+      version: 3.5.0
+    serviceAccount: spark-release-spark
+    volumeMounts:
+      - name: test-volume
+        mountPath: /mnt/spark/work
